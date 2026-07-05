@@ -285,7 +285,7 @@ function narrIconHTML(kind,m,color){const c=esc(color||'#cfcfcf');if(kind==='hid
 let EXPORTING=false;const _blobCache={};
 let _expImg={map:{},order:[]};
 function _expReg(src){if(_expImg.map[src]!=null)return _expImg.map[src];const id='ci'+_expImg.order.length;_expImg.map[src]=id;_expImg.order.push(src);return id;}
-function _expImgCss(pos){if(!_expImg.order.length)return'';let s='.ccfimg{background-size:cover;background-position:'+pos+';background-repeat:no-repeat}';for(let i=0;i<_expImg.order.length;i++){const src=_expImg.order[i];s+='.'+_expImg.map[src]+'{background-image:url("'+src+'")}';}return s;}
+function _expImgCss(pos){if(!_expImg.order.length)return'';let s='.ico.ccfimg{background-size:cover;background-position:'+pos+';background-repeat:no-repeat}';for(let i=0;i<_expImg.order.length;i++){const src=_expImg.order[i];s+='.ico.ccfimg.'+_expImg.map[src]+'{background-image:url("'+src+'")}';}return s;}
 function icoTag(src){if(EXPORTING){return'<div class="ico ccfimg '+_expReg(src)+'"></div>';}return'<img class="ico" src="'+toBlobUrl(src)+'" loading="lazy">';}
 function toBlobUrl(d){if(!d||d.slice(0,5)!=='data:')return d;if(_blobCache[d])return _blobCache[d];try{const c=d.indexOf(',');const meta=d.slice(0,c),b64=d.slice(c+1);const mime=(meta.match(/data:([^;]+)/)||[])[1]||'image/png';const bin=atob(b64),arr=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);const u=URL.createObjectURL(new Blob([arr],{type:mime}));_blobCache[d]=u;return u;}catch(_){return d;}}
 function imgSrc(s){return EXPORTING?s:toBlobUrl(s);}
