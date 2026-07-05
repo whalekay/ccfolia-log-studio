@@ -87,6 +87,9 @@
   sup.fn{color:var(--m-accent);font-weight:700;font-size:.7em;margin:0 1px}
   .fncaps{margin-top:6px;padding-top:5px;border-top:1px dashed color-mix(in srgb,var(--m-accent) 40%,transparent)}
   .fncap{font-size:12px;color:var(--ink-dim);line-height:1.55}.fncap sup{color:var(--m-accent);font-weight:700;margin-right:4px}
+  .fncapbtns{margin-left:6px;display:inline-flex;gap:3px;vertical-align:middle}
+  .fncapbtns button{background:transparent;border:1px solid var(--line);color:var(--ink-dim);border-radius:5px;font-size:10px;padding:0 5px;cursor:pointer;line-height:1.7}
+  .fncapbtns button:hover{border-color:var(--accent);color:var(--accent)}
   .ln{position:relative}
   .ln .lnbtn{opacity:0;margin-left:6px;font-size:11px;border:none;background:none;cursor:pointer;color:var(--accent);padding:0}
   .ln .lnbtn.del{color:#e88}
@@ -269,7 +272,7 @@ function iconFor(m){return iconOverride[m.id]!=null?iconOverride[m.id]:origIcon(
 function textOf(m){return edits[m.id]!=null?edits[m.id]:(m.text||'');}
 function mdInline(s){s=s.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');s=s.replace(/\*([^*\n]+)\*/g,'<em>$1</em>');return s;}
 function fmtText(raw){var s=esc(raw);if(settings.markdown){s=s.replace(/^(#{1,3})[ \t]+(.+)$/gm,function(_,h,t){return '<span class="md-h md-h'+h.length+'">'+t+'</span>';});s=mdInline(s);}s=s.replace(/\[\^(\d+)\]/g,'<sup class="fn">$1</sup>');return s;}
-function capsHTML(item){var h='';item.msgs.forEach(function(m){(footnotes[m.id]||[]).forEach(function(c,i){h+='<div class="fncap"><sup>'+(i+1)+'</sup>'+esc(c)+'</div>';});});return h?'<div class="fncaps">'+h+'</div>':'';}
+function capsHTML(item){var h='';item.msgs.forEach(function(m){(footnotes[m.id]||[]).forEach(function(c,i){var btns=EXPORTING?'':'<span class="fncapbtns"><button data-fnedit="'+m.id+'|'+i+'" title="각주 수정">✎</button><button data-fndel="'+m.id+'|'+i+'" title="각주 삭제">✕</button></span>';h+='<div class="fncap"><sup>'+(i+1)+'</sup>'+esc(c)+btns+'</div>';});});return h?'<div class="fncaps">'+h+'</div>':'';}
 function speakerKey(m){return m.from||m.name||'?';}
 function emptyKinMsgs(id){var key=speakerKey(msgById[id]);var out=[];order.forEach(function(mid){if(mid===id||deleted[mid])return;var m=msgById[mid];if(m&&m.type!=='system'&&speakerKey(m)===key&&!iconFor(m))out.push(mid);});return out;}
 function sameExprKin(id,oldSrc){var key=speakerKey(msgById[id]);var out=[];order.forEach(function(mid){if(mid===id||deleted[mid])return;var m=msgById[mid];if(m&&m.type!=='system'&&speakerKey(m)===key&&iconFor(m)===oldSrc)out.push(mid);});return out;}
@@ -376,7 +379,8 @@ $('render').addEventListener('click',e=>{const t=e.target;
   else if(t.dataset.delitem){t.dataset.delitem.split(',').forEach(function(id){deleted[id]=true;});render();}
   else if(t.dataset.cancelln){openLine=null;render();}
   else if(t.dataset.saveln){const id=t.dataset.saveln;const ta=$('render').querySelector('[data-lnta="'+id+'"]');if(ta)edits[id]=ta.value;openLine=null;render();}
-  else if(t.dataset.fn){const id=t.dataset.fn;const ta=$('render').querySelector('[data-lnta="'+id+'"]');if(!ta)return;const s=ta.selectionStart,en=ta.selectionEnd;if(s==null||s===en){alert('각주를 달 부분을 드래그로 선택한 뒤 「각주」를 눌러주세요.');return;}const cap=(prompt('각주 내용(캡션)을 입력하세요')||'').trim();if(!cap)return;if(!footnotes[id])footnotes[id]=[];const n=footnotes[id].length+1;const v=ta.value;edits[id]=v.slice(0,en)+'[^'+n+']'+v.slice(en);footnotes[id].push(cap);render();}
+  else if(t.dataset.fnedit){var _pe=t.dataset.fnedit.split('|');var _eid=_pe[0],_eidx=+_pe[1];var _earr=footnotes[_eid];if(!_earr||_earr[_eidx]==null)return;var _nv=prompt('각주 내용 수정',_earr[_eidx]);if(_nv==null)return;_nv=_nv.trim();if(!_nv){alert('내용이 비어 있어요. 삭제하려면 ✕ 버튼을 눌러주세요.');return;}_earr[_eidx]=_nv;render();}
+  else if(t.dataset.fndel){var _pd=t.dataset.fndel.split('|');var _did=_pd[0],_didx=+_pd[1];var _darr=footnotes[_did];if(!_darr||_darr[_didx]==null)return;var _n=_didx+1;if(!confirm(_n+'번 각주를 삭제할까요? 본문의 각주 표시도 함께 지워집니다.'))return;var _mm=msgById[_did];if(_mm){var _cur=textOf(_mm);var _nt=_cur.replace('[^'+_n+']','');var _len=_darr.length;for(var _k=_n+1;_k<=_len;_k++){_nt=_nt.replace('[^'+_k+']','[^'+(_k-1)+']');}edits[_did]=_nt;}_darr.splice(_didx,1);if(!_darr.length)delete footnotes[_did];render();}
   else if(t.dataset.editname){openName=t.dataset.editname;openLine=null;openIcon=null;render();}
   else if(t.dataset.cancelname){openName=null;render();}
   else if(t.dataset.savename){const id=t.dataset.savename;const rr=$('render');const inp=rr.querySelector('[data-nameta="'+id+'"]');const cp=rr.querySelector('[data-namecol="'+id+'"]');commitNameColor(id,inp?inp.value:'',cp?cp.value:null);}
